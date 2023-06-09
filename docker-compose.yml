@@ -14,5 +14,3 @@ services:
       - OFFICIAL_BUILD=false # from https://grapheneos.org/build#setting-up-the-os-build-environment
     volumes:
       - ./finished_build:/path/to/finished_build_only
-    
-
