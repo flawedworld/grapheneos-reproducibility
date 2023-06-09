@@ -12,5 +12,21 @@ services:
       - RELEASE_TAG=development # from https://grapheneos.org/build#downloading-source-code
       - BUILD_MODE=userdebug # from https://grapheneos.org/build#setting-up-the-os-build-environment
       - OFFICIAL_BUILD=false # from https://grapheneos.org/build#setting-up-the-os-build-environment
+      - USE_PREBUILT_KERNEL=false
+      - SKIP_AUDITOR=true
+      - SKIP_APPS=true
+      - SKIP_CAMERA=true
+      - SKIP_GMSCOMPATCONFIG=true
+      - SKIP_TALKBACK=true
+      - SKIP_VANADIUM=true
+      - SKIP_GRAPHENEOS=false
     volumes:
       - ./finished_build:/path/to/finished_build_only
+      - ./auditor:/opt/build/auditor
+      - ./apps:/opt/build/apps
+      - ./camera:/opt/build/camera
+      - ./gmscompatconfig:/opt/build/gmscompatconfig
+      - ./pdfviewer:/opt/build/pdfviewer
+      - ./talkback:/opt/build/talkback
+      - ./vanadium:/opt/build/vanadium
+      - ./grapheneos:/opt/build/grapheneos
