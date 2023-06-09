@@ -20,6 +20,7 @@ services:
       - SKIP_TALKBACK=true
       - SKIP_VANADIUM=true
       - SKIP_GRAPHENEOS=false
+      - USE_TEST_KEYS=true
     volumes:
       - ./finished_build:/path/to/finished_build_only
       - ./auditor:/opt/build/auditor
