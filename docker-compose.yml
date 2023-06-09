@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+  build-gos:
+    build:
+      context: ./build-gos
+      dockerfile: Dockerfile
+    container_name: build-gos
+    restart: always
+    environment:
+      - DEVICE_MODEL=pantah # from https://grapheneos.org/build#build-targets
+      - RELEASE_TAG=development # from https://grapheneos.org/build#downloading-source-code
+      - BUILD_MODE=userdebug # from https://grapheneos.org/build#setting-up-the-os-build-environment
+      - OFFICIAL_BUILD=false # from https://grapheneos.org/build#setting-up-the-os-build-environment
+    volumes:
+      - ./finished_build:/path/to/finished_build_only
+    
+
