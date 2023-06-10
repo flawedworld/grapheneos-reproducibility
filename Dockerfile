@@ -16,6 +16,7 @@ RUN pacman -U /tmp/aur/ncurses5-compat-libs/ncurses5-compat-libs-* --noconfirm &
     usermod -a -G wheel builduser && \
     echo "%wheel ALL=(ALL:ALL) NOPASSWD: ALL" > /etc/sudoers.d/nopass
 
+COPY .gitconfig /home/builduser/.gitconfig
 COPY entrypoint.bash /usr/local/bin/build-entrypoint.bash
 USER builduser
 
@@ -30,7 +31,7 @@ ENV DEVICES_TO_BUILD=redfin,oriole,bluejay \
     APPS_TO_BUILD=none \
     SKIP_GRAPHENEOS=false \
     BUILD_VANADIUM=false \
-    OFFICIAL_BUILD=true 
+    OFFICIAL_BUILD=true
 
 WORKDIR /opt/build/
 ENTRYPOINT ["/usr/local/bin/build-entrypoint.bash"]
