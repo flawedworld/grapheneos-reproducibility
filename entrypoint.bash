@@ -2,7 +2,7 @@
 
 set -o errexit -o pipefail
 
-sudo chown builduser:builduser /opt/build/grapheneos/ && cd /opt/build/grapheneos/
+sudo chown builduser:builduser /opt/build/grapheneos/
 
 echo "[INFO] Downloading and verifying manifest"
 repo init -u https://github.com/GrapheneOS/platform_manifest.git -b refs/tags/TQ2A.230505.002.2023060700
@@ -10,7 +10,7 @@ mkdir ~/.ssh && curl https://grapheneos.org/allowed_signers > ~/.ssh/grapheneos_
 cd .repo/manifests
 git config gpg.ssh.allowedSignersFile ~/.ssh/grapheneos_allowed_signers
 git verify-tag $(git describe)
-cd ../..
+cd /opt/build/grapheneos
 
 echo "[INFO] Syncing GrapheneOS tree"
 repo sync -j16
