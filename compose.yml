@@ -19,6 +19,7 @@ services:
       # - APPS_TO_BUILD=all
       # - SKIP_GRAPHENEOS=false
       # - BUILD_VANADIUM=false
+      - USE_AOSP_TEST_KEYS=false
       - OFFICIAL_BUILD=true
       - NPROC_SYNC=8
       - NPROC_BUILD=8
@@ -27,4 +28,3 @@ services:
       - ./local_manifests:/.repo/local_manifests:ro
       - ./keys:/opt/build/grapheneos/build:ro
       - ./.gitcookies:/.gitcookies:ro
-      
