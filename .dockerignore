@@ -1,2 +1,6 @@
 grapheneos-tree/
 tmp/
+generate_signing_keys.sh
+check-metadata-server.service
+check-metadata-server.sh
+check-metadata-server.timer
