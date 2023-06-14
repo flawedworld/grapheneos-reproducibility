@@ -13,7 +13,7 @@ USE_PREBUILT_KERNEL="${USE_PREBUILT_KERNEL:-false}"
 USE_PREBUILT_APPS="${USE_PREBUILT_APPS:-false}"
 PACKAGE_OS="${PACKAGE_OS:-true}"
 APPS_TO_BUILD="${APPS_TO_BUILD:-all}"
-USE_GRAPHENEOS_TEST_KEYS="${USE_GRAPHENEOS_TEST_KEYS:-false}"
+USE_AOSP_TEST_KEYS="${USE_AOSP_TEST_KEYS:-false}"
 OFFICIAL_BUILD="${OFFICIAL_BUILD:-true}"
 NPROC_SYNC="${NPROC_SYNC:-8}"
 NPROC_BUILD="${NPROC_BUILD:-8}"
@@ -76,7 +76,7 @@ check_breaking_env() {
             exit 1
         fi
     # If we want a final ZIP and if we don't find the keys folder and we aren't using the test keys...
-    elif [[ $PACKAGE_OS == "true" && ! -d "/opt/build/grapheneos/keys" && $USE_GRAPHENEOS_TEST_KEYS == "false" ]]; then
+    elif [[ $PACKAGE_OS == "true" && ! -d "/opt/build/grapheneos/keys" && $USE_AOSP_TEST_KEYS == "false" ]]; then
         echo "Packaging the OS requires signed keys to be available. Check your bind mount and retry or use GrapheneOS test keys (not recommended)."
         exit 1
     fi
@@ -111,7 +111,7 @@ compile_os () {
         echo "BUILD_NUMBER is set to: $BUILD_NUMBER"
         echo "BUILD_ID is set to: $BUILD_ID"
     fi
-    echo "Are we using the GrapheneOS Test Keys: $USE_GRAPHENEOS_TEST_KEYS"
+    echo "Are we using the AOSP Test Keys: $USE_AOSP_TEST_KEYS"
     echo
     echo "Are we using the prebuilt kernel: $USE_PREBUILT_KERNEL"
     echo "Are we using the prebuilt applications: $USE_PREBUILT_APPS"
@@ -188,7 +188,7 @@ build_kernel () {
             mkdir -p android/kernel/coral
             cd android/kernel/coral
             repo init -u https://github.com/GrapheneOS/kernel_manifest-coral.git -b 13
-            repo sync -j${NPROC_SYNC}
+            repo sync -j${NPROC_SYNC} --force-sync --no-clone-bundle --no-tags
             if [[ $DEVICE == "coral" ]]; then
                 KBUILD_BUILD_VERSION=1 KBUILD_BUILD_USER=build-user KBUILD_BUILD_HOST=build-host KBUILD_BUILD_TIMESTAMP="Thu 01 Jan 1970 12:00:00 AM UTC" BUILD_CONFIG=private/msm-google/build.config.floral build/build.sh
                 rsync -av --delete out/android-msm-pixel-4.14/dist/ device/google/coral-kernel/
@@ -201,7 +201,7 @@ build_kernel () {
             mkdir -p android/kernel/redbull
             cd android/kernel/redbull
             repo init -u https://github.com/GrapheneOS/kernel_manifest-redbull.git -b 13
-            repo sync -j${NPROC_SYNC}
+            repo sync -j${NPROC_SYNC} --force-sync --no-clone-bundle --no-tags
             BUILD_CONFIG=private/msm-google/build.config.redbull.vintf build/build.sh
             rsync -av --delete out/android-msm-pixel-4.19/dist/ device/google/redbull-kernel/vintf/
             ;;
@@ -209,7 +209,7 @@ build_kernel () {
             mkdir -p android/kernel/raviole
             cd android/kernel/raviole
             repo init -u https://github.com/GrapheneOS/kernel_manifest-raviole.git -b 13
-            repo sync -j${NPROC_SYNC}
+            repo sync -j${NPROC_SYNC} --force-sync --no-clone-bundle --no-tags
             LTO=full BUILD_AOSP_KERNEL=1 ./build_slider.sh
             rsync -av --delete out/mixed/dist/ device/google/raviole-kernel/
             ;;
@@ -217,7 +217,7 @@ build_kernel () {
             mkdir -p android/kernel/bluejay
             cd android/kernel/bluejay
             repo init -u https://github.com/GrapheneOS/kernel_manifest-bluejay.git -b 13
-            repo sync -j${NPROC_SYNC}
+            repo sync -j${NPROC_SYNC} --force-sync --no-clone-bundle --no-tags
             LTO=full BUILD_AOSP_KERNEL=1 ./build_bluejay.sh
             rsync -av --delete out/mixed/dist/ device/google/bluejay-kernel/
             ;;
@@ -225,7 +225,7 @@ build_kernel () {
             mkdir -p android/kernel/pantah
             cd android/kernel/pantah
             repo init -u https://github.com/GrapheneOS/kernel_manifest-pantah.git -b 13
-            repo sync -j${NPROC_SYNC}
+            repo sync -j${NPROC_SYNC} --force-sync --no-clone-bundle --no-tags
             LTO=full BUILD_AOSP_KERNEL=1 ./build_cloudripper.sh
             rsync -av --delete out/mixed/dist/ device/google/pantah-kernel/
             ;;
@@ -233,7 +233,7 @@ build_kernel () {
             mkdir -p android/kernel/lynx
             cd android/kernel/lynx
             repo init -u https://github.com/GrapheneOS/kernel_manifest-lynx.git -b 13
-            repo sync -j${NPROC_SYNC}
+            repo sync -j${NPROC_SYNC} --force-sync --no-clone-bundle --no-tags
             LTO=full BUILD_AOSP_KERNEL=1 ./build_lynx.sh
             rsync -av --delete out/mixed/dist/ device/google/lynx-kernel/
             ;;
@@ -311,88 +311,43 @@ build_applications () {
     # Download and build the applications
     if [ "$APPS_TO_BUILD" != "all" ]; then
         IFS=" " read -r -a apps_array <<< "$APPS_TO_BUILD"
-        for APP in "${apps_array[@]}"; do
-            
-            VERSION_CODE=aapt2 dump badging external/"${APP}"/prebuilt/"${APP}".apk | grep -oP "versionCode='\K\d+"
-            if [ "$APP" = "GmsCompat" ]; then
-                git clone "https://github.com/GrapheneOS/platform_packages_apps_GmsCompat.git"
-                cd "platform_packages_apps_GmsCompat"
-            else 
-                git clone "https://github.com/GrapheneOS/$APP.git"
-                cd "$APP"
-            fi
-            
-            # If BUILD_TARGET exists, build newest
-            if [[ ! -z "$BUILD_TARGET" ]]; then
-                if [ "$APP" = "GmsCompat" ]; then
-                    git checkout tags/"$(git describe --tags --abbrev=0)"
-                    cd config-holder/
-                else
-                    git checkout tags/"$(git describe --tags --abbrev=0)"
-                fi
-            # If MANIFESTS_FOR_BUILD or BUILD_NUMBER exists, grab APK, dump using AAPT2 from , then grab from latest
-            elif [[ ! -z "$MANIFESTS_FOR_BUILD" || ! -z "$BUILD_NUMBER" ]]; then
-                if [ "$APP" = "GmsCompat" ]; then
-                    git checkout tags/"${VERSION_CODE}"
-                    cd config-holder/
-                else
-                    git checkout tags/"${VERSION_CODE}"
-                fi
-            fi
-
-            # Update Gradle 
-            GRADLE_VERSION=$(grep '^distributionUrl=' gradle/wrapper/gradle-wrapper.properties | awk -F'/' '{print $NF}' | cut -d'-' -f2)
-            GRADLE_CHECKSUM=$(sed -n 's/^distributionSha256Sum=//p' gradle/wrapper/gradle-wrapper.properties)
-
-            ./gradlew wrapper --gradle-version="$GRADLE_VERSION" --gradle-distribution-sha256-sum="$GRADLE_CHECKSUM"
-            ./gradlew wrapper --gradle-version="$GRADLE_VERSION" --gradle-distribution-sha256-sum="$GRADLE_CHECKSUM"
-
-            ./gradlew build
-
-            cd ..
-        done
     else
         apps_array=("Auditor" "Apps" "Camera" "PdfViewer" "talkback" "GmsCompat")
-        for APP in "${apps_array[@]}"; do
-            VERSION_CODE=aapt2 dump badging external/"${APP}"/prebuilt/"${APP}".apk | grep -oP "versionCode='\K\d+"
-            if [ "$APP" = "GmsCompat" ]; then
-                git clone "https://github.com/GrapheneOS/platform_packages_apps_GmsCompat.git"
-                cd "platform_packages_apps_GmsCompat"
-            else 
-                git clone "https://github.com/GrapheneOS/$APP.git"
-                cd "$APP"
-            fi
-            
-            # If BUILD_TARGET exists, build newest
-            if [[ ! -z "$BUILD_TARGET" ]]; then
-                if [ "$APP" = "GmsCompat" ]; then
-                    git checkout tags/"$(git describe --tags --abbrev=0)"
-                    cd config-holder/
-                else
-                    git checkout tags/"$(git describe --tags --abbrev=0)"
-                fi
-            # If MANIFESTS_FOR_BUILD or BUILD_NUMBER exists, grab APK, dump using AAPT2 from , then grab from latest
-            elif [[ ! -z "$MANIFESTS_FOR_BUILD" || ! -z "$BUILD_NUMBER" ]]; then
-                if [ "$APP" = "GmsCompat" ]; then
-                    git checkout tags/"${VERSION_CODE}"
-                    cd config-holder/
-                else
-                    git checkout tags/"${VERSION_CODE}"
-                fi
-            fi
-
-            # Update Gradle 
-            GRADLE_VERSION=$(grep '^distributionUrl=' gradle/wrapper/gradle-wrapper.properties | awk -F'/' '{print $NF}' | cut -d'-' -f2)
-            GRADLE_CHECKSUM=$(sed -n 's/^distributionSha256Sum=//p' gradle/wrapper/gradle-wrapper.properties)
-
-            ./gradlew wrapper --gradle-version="$GRADLE_VERSION" --gradle-distribution-sha256-sum="$GRADLE_CHECKSUM"
-            ./gradlew wrapper --gradle-version="$GRADLE_VERSION" --gradle-distribution-sha256-sum="$GRADLE_CHECKSUM"
-
-            ./gradlew build
-
-            cd ..
-        done
     fi
+
+    for APP in "${apps_array[@]}"; do
+        VERSION_CODE=$(aapt2 dump badging "external/${APP}/prebuilt/${APP}.apk" | grep -oP "versionCode='\K\d+")
+
+        clone_repository() {
+            local app_dir="$1"
+            local repo_url="https://github.com/GrapheneOS/${app_dir}.git"
+            git clone "$repo_url"
+            cd "$app_dir"
+        }
+
+        if [ "$APP" = "GmsCompat" ]; then
+            clone_repository "platform_packages_apps_GmsCompat"
+        else
+            clone_repository "$APP"
+        fi
+
+        if [ "$APP" = "GmsCompat" ] && { [ ! -z "$BUILD_TARGET" ] || [ ! -z "$MANIFESTS_FOR_BUILD" ] || [ ! -z "$BUILD_NUMBER" ]; }; then
+            git checkout tags/"${VERSION_CODE}"
+            [ "$APP" = "GmsCompat" ] && cd config-holder/
+        elif [ ! -z "$BUILD_TARGET" ]; then
+            git checkout tags/"$(git describe --tags --abbrev=0)"
+        elif [ ! -z "$MANIFESTS_FOR_BUILD" ] || [ ! -z "$BUILD_NUMBER" ]; then
+            git checkout tags/"${VERSION_CODE}"
+        fi
+
+        GRADLE_VERSION=$(awk -F'/' '/^distributionUrl=/ {print $NF}' gradle/wrapper/gradle-wrapper.properties | cut -d'-' -f2)
+        GRADLE_CHECKSUM=$(awk -F'=' '/^distributionSha256Sum=/ {print $NF}' gradle/wrapper/gradle-wrapper.properties)
+
+        ./gradlew wrapper --gradle-version="$GRADLE_VERSION" --gradle-distribution-sha256-sum="$GRADLE_CHECKSUM"
+        ./gradlew build
+
+        cd ..
+    done
 }
 
 check_breaking_env

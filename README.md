@@ -27,7 +27,7 @@ Each of these are pulled from the Update Server metadata. For example, [here is 
 For `docker run`:
 
 ```bash
-docker run --privileged -e "DEVICES_TO_BUILD=bluejay" -e "BUILD_TARGET=stable" -v "./grapheneos-tree/:/opt/build/grapheneos/" -v "./local_manifests:/.repo/local_manifests:ro" -v "./keys:/opt/build/grapheneos/build:ro" -v "./.gitcookies:/.gitcookies:ro" gos-reproducibility
+docker run --privileged -e "DEVICES_TO_BUILD=bluejay" -e "BUILD_TARGET=stable" -v "./grapheneos-tree/:/opt/build/grapheneos/" -v "./local_manifests:/.repo/local_manifests:ro" -v "./keys:/opt/build/grapheneos/keys:ro" -v "./.gitcookies:/.gitcookies:ro" gos-reproducibility
 ```
 
 For `docker compose`:
@@ -64,7 +64,7 @@ Using `DEVICES_TO_BUILD` and `MANIFESTS_FOR_BUILD` in tandem, you can build mult
 For `docker run`:
 
 ```bash
-docker run --privileged -e "DEVICES_TO_BUILD=redfin oriole lynx" -e "TQ2A.230505.002.2023060700 TQ2A.230505.002.2023060700 TQ2B.230505.005.A1.2023060700" -e "OFFICIAL_BUILD=false" -v "./grapheneos-tree/:/opt/build/grapheneos/" -v "./local_manifests:/.repo/local_manifests:ro" -v "./keys:/opt/build/grapheneos/build:ro" -v "./.gitcookies:/.gitcookies:ro" gos-reproducibility
+docker run --privileged -e "DEVICES_TO_BUILD=redfin oriole lynx" -e "TQ2A.230505.002.2023060700 TQ2A.230505.002.2023060700 TQ2B.230505.005.A1.2023060700" -e "OFFICIAL_BUILD=false" -v "./grapheneos-tree/:/opt/build/grapheneos/" -v "./local_manifests:/.repo/local_manifests:ro" -v "./keys:/opt/build/grapheneos/keys:ro" -v "./.gitcookies:/.gitcookies:ro" gos-reproducibility
 ```
 
 For `docker compose`:
@@ -101,7 +101,7 @@ Using `BUILD_ID`, `BUILD_DATETIME`, and `BUILD_NUMBER`, you can build a reproduc
 For `docker run`:
 
 ```bash
-docker run --privileged -e "DEVICES_TO_BUILD=bluejay" -e "BUILD_TARGET=stable" -v "./grapheneos-tree/:/opt/build/grapheneos/" -v "./local_manifests:/.repo/local_manifests:ro" -v "./keys:/opt/build/grapheneos/build:ro" -v "./.gitcookies:/.gitcookies:ro" gos-reproducibility
+docker run --privileged -e "DEVICES_TO_BUILD=bluejay" -e "BUILD_TARGET=stable" -v "./grapheneos-tree/:/opt/build/grapheneos/" -v "./local_manifests:/.repo/local_manifests:ro" -v "./keys:/opt/build/grapheneos/keys:ro" -v "./.gitcookies:/.gitcookies:ro" gos-reproducibility
 ```
 
 For `docker compose`:
