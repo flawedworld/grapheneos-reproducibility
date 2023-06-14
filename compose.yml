@@ -1,0 +1,30 @@
+services:
+  grapheneos-builder:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: grapheneos-builder
+    privileged: true
+    # These are the bare minimum to build GrapheneOS
+    environment:
+      - DEVICES_TO_BUILD="redfin oriole lynx"
+      # - MANIFESTS_FOR_BUILD="TQ2A.230505.002.2023060700 TQ2A.230505.002.2023060700 TQ2B.230505.005.A1.2023060700"
+      - BUILD_TARGET=stable
+      # - BUILD_NUMBER=2023060700
+      # - BUILD_DATETIME=1686159583
+      # - BUILD_ID=TQ2A.230505.002
+      - USE_PREBUILT_KERNEL=false
+      - USE_PREBUILT_APPS=false
+      - PACKAGE_OS=true
+      # - APPS_TO_BUILD=all
+      # - SKIP_GRAPHENEOS=false
+      # - BUILD_VANADIUM=false
+      - OFFICIAL_BUILD=true
+      - NPROC_SYNC=8
+      - NPROC_BUILD=8
+    volumes:
+      - ./grapheneos-tree/:/opt/build/grapheneos
+      - ./local_manifests:/.repo/local_manifests:ro
+      - ./keys:/opt/build/grapheneos/build:ro
+      - ./.gitcookies:/.gitcookies:ro
+      

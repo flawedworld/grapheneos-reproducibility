@@ -1,0 +1,8 @@
+[Unit]
+Description=Check Metadata Server for Update
+
+[Timer]
+OnCalendar=hourly
+
+[Install]
+WantedBy=multi-user.target
