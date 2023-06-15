@@ -3,7 +3,7 @@
 set -o errexit -o pipefail
 
 # Set default values 
-DEVICES_TO_BUILD="raven"
+DEVICES_TO_BUILD="${DEVICES_TO_BUILD:-"raven"}"
 MANIFESTS_FOR_BUILD="${MANIFESTS_FOR_BUILD:-""}"
 BUILD_TARGET="${BUILD_TARGET:-"stable"}"
 BUILD_NUMBER="${BUILD_NUMBER:-""}"
