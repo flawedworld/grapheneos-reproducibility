@@ -25,7 +25,7 @@ GIT_EMAILADDRESS="${GIT_EMAILADDRESS:-grapheneos-build@localhost}"
 # If we set the keys or local_manifest directly into the build directory, repo doesn't have permissions to do its thing.
 # We will do it outside of the directory and copy them into the build environment.
 
-# This, in theory, means you don't have to wait for the build to process and complete and store your keys elsewhere.
+# This, in theory, means you don't have to wait for the build to process and complete and it allows you store your keys elsewhere while the build compiles.
 if [ -d "/keys" ]; then
     sudo cp -r /keys /opt/build/grapheneos/keys
 fi
@@ -94,8 +94,25 @@ check_breaking_env() {
         echo "If you want to build the applications, ensure that you set APPS_TO_BUILD to what you want to build. If you want to build all, set the variable to all."
         exit 1
     fi
+
+    # For any potential application in APPS_TO_BUILD, check to see if they are acceptable values.
+    for app in "${apps_array[@]}"; do
+        if [[ $app != "Auditor" && $app != "Apps" && $app != "Camera" && $app != "PdfViewer" && $app != "talkback" && $app != "GmsCompat" && $app != "all" ]]; then
+            echo "$app is not a valid application. The only valid applications are: Auditor, Apps, Camera, PdfViewer, talkback, GmsCompat. You can also set it to 'all' and it will build all the applications."
+            exit 1
+        fi
+    done
+
+    # For any potential devices in DEVICES_TO_BUILD, check to see if they are acceptable values.
+    for device in "${device_array[@]}"; do
+        if [[ $device != "coral" && $device != "sunfish" && $device != "bramble" && $device != "redfin" && $device != "barbet" && $device != "oriole" && $device != "raven" && $device != "bluejay" && $device != "panther" && $device != "cheetah" && $device != "lynx" ]]; then
+            echo "$device is not a valid device. The only valid devices are: coral, sunfish, bramble, redfin, barbet, oriole, raven, bluejay, panther, cheetah, lynx."
+            exit 1
+        fi
+    done
 }
 
+# Ping the official update server and get the current metadata.
 get_metadata () {
     local DEVICE=$1
     local CHANNEL=$2
@@ -131,7 +148,7 @@ repo_init_and_sync () {
         (cd .repo/manifests && git config gpg.ssh.allowedSignersFile ~/.ssh/grapheneos_allowed_signers && git verify-tag "$(git describe)")
     fi
 
-    # There's a bug where if we set the keys or local_manifest directly into the build directory, repo doesn't have permissions to do its thing.
+    # If we set the keys or local_manifest directly into the build directory, repo doesn't have permissions to do its thing.
     # We will do it outside of the directory and copy them into the build environment.
     if [[ -d "/local_manifests" ]]; then
         sudo cp -r /local_manifests /opt/build/grapheneos/.repo/local_manifests
@@ -366,20 +383,33 @@ build_applications () {
             clone_repository "$APP"
         fi
 
-        if [ "$APP" = "GmsCompat" ] && { [ ! -z "$BUILD_TARGET" ] || [ ! -z "$MANIFESTS_FOR_BUILD" ] || [ ! -z "$BUILD_NUMBER" ]; }; then
-            git checkout tags/"${VERSION_CODE}"
-            [ "$APP" = "GmsCompat" ] && cd config-holder/
-        elif [ ! -z "$BUILD_TARGET" ]; then
-            git checkout tags/"$(git describe --tags --abbrev=0)"
-        elif [ ! -z "$MANIFESTS_FOR_BUILD" ] || [ ! -z "$BUILD_NUMBER" ]; then
-            git checkout tags/"${VERSION_CODE}"
+        # If BUILD_TARGET exists, build newest
+        if [[ ! -z "$BUILD_TARGET" ]]; then
+            if [ "$APP" = "GmsCompat" ]; then
+                git checkout tags/"$(git describe --tags --abbrev=0)"
+                cd config-holder/
+            else
+                git checkout tags/"$(git describe --tags --abbrev=0)"
+            fi
+        # If MANIFESTS_FOR_BUILD or BUILD_NUMBER exists, use the prebuilt APK's versionCode and checkout the tag related
+        elif [[ ! -z "$MANIFESTS_FOR_BUILD" || ! -z "$BUILD_NUMBER" ]]; then
+            if [ "$APP" = "GmsCompat" ]; then
+                git checkout tags/"${VERSION_CODE}"
+                cd config-holder/
+            else
+                git checkout tags/"${VERSION_CODE}"
+            fi
         fi
 
         GRADLE_VERSION=$(awk -F'/' '/^distributionUrl=/ {print $NF}' gradle/wrapper/gradle-wrapper.properties | cut -d'-' -f2)
         GRADLE_CHECKSUM=$(awk -F'=' '/^distributionSha256Sum=/ {print $NF}' gradle/wrapper/gradle-wrapper.properties)
 
         ./gradlew wrapper --gradle-version="$GRADLE_VERSION" --gradle-distribution-sha256-sum="$GRADLE_CHECKSUM"
+        ./gradlew wrapper --gradle-version="$GRADLE_VERSION" --gradle-distribution-sha256-sum="$GRADLE_CHECKSUM"
+
         ./gradlew build
+
+        # TODO: export the built application to external/$APP/prebuilt/$APP.apk as well as a path outside of the build folder
 
         cd ..
     done
