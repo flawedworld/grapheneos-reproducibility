@@ -7,7 +7,7 @@ services:
     privileged: true
     # These are the bare minimum to build GrapheneOS
     environment:
-      - DEVICES_TO_BUILD="redfin oriole lynx"
+      - DEVICES_TO_BUILD="raven"
       # - MANIFESTS_FOR_BUILD="TQ2A.230505.002.2023060700 TQ2A.230505.002.2023060700 TQ2B.230505.005.A1.2023060700"
       - BUILD_TARGET=stable
       # - BUILD_NUMBER=2023060700
@@ -16,7 +16,7 @@ services:
       - USE_PREBUILT_KERNEL=false
       - USE_PREBUILT_APPS=false
       - PACKAGE_OS=true
-      # - APPS_TO_BUILD=all
+      - APPS_TO_BUILD=all
       # - SKIP_GRAPHENEOS=false
       # - BUILD_VANADIUM=false
       - USE_AOSP_TEST_KEYS=false
@@ -25,6 +25,6 @@ services:
       - NPROC_BUILD=8
     volumes:
       - ./grapheneos-tree/:/opt/build/grapheneos
-      - ./local_manifests:/opt/build/grapheneos/.repo/local_manifests:ro
-      - ./keys:/opt/build/grapheneos/keys:ro
-      - ./.gitcookies:/.gitcookies:ro
+      - ./local_manifests:/local_manifests
+      - ./keys:/keys
+      - ./.gitcookies:/.gitcookies

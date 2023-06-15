@@ -13,7 +13,8 @@ RUN pacman -Syyuu --noconfirm repo python git gnupg diffutils freetype2 \
     pacman -U /tmp/aur/ncurses5-compat-libs/ncurses5-compat-libs-* --noconfirm && \
     # Give our user sudo privileges
     usermod -a -G wheel builduser && \
-    echo "%wheel ALL=(ALL:ALL) NOPASSWD: ALL" > /etc/sudoers.d/nopass
+    echo "%wheel ALL=(ALL:ALL) NOPASSWD: ALL" > /etc/sudoers.d/nopass && \
+    mkdir -p /opt/build/grapheneos/ && chown -R builduser:builduser /opt/build/
 
 COPY entrypoint.bash /usr/local/bin/build-entrypoint.bash
 USER builduser
