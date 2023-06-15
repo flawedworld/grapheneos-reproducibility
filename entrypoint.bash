@@ -22,8 +22,13 @@ BUILD_VANADIUM="${BUILD_VANADIUM:-false}"
 GIT_USERNAME="${GIT_USERNAME:-grapheneos}"
 GIT_EMAILADDRESS="${GIT_EMAILADDRESS:-grapheneos-build@localhost}"
 
-# Set ownership of the target directory
-sudo chown builduser:builduser /opt/build/grapheneos/
+# If we set the keys or local_manifest directly into the build directory, repo doesn't have permissions to do its thing.
+# We will do it outside of the directory and copy them into the build environment.
+
+# This, in theory, means you don't have to wait for the build to process and complete and store your keys elsewhere.
+if [ -d "/keys" ]; then
+    sudo cp -r /keys /opt/build/grapheneos/keys
+fi
 
 # Configure Git user name and email and gitcookies
 git config --global user.name "$GIT_USERNAME"
@@ -37,6 +42,7 @@ fi
 check_breaking_env() {
     IFS=" " read -r -a device_array <<< "$DEVICES_TO_BUILD"
     IFS=" " read -r -a manifest_array <<< "$MANIFESTS_FOR_BUILD"
+    IFS=" " read -r -a apps_array <<< "$APPS_TO_BUILD"
 
     # This implies either build method one or three.
     if [[ ${#device_array[@]} != ${#manifest_array[@]} ]]; then
@@ -79,6 +85,14 @@ check_breaking_env() {
     elif [[ $PACKAGE_OS == "true" && ! -d "/opt/build/grapheneos/keys" && $USE_AOSP_TEST_KEYS == "false" ]]; then
         echo "Packaging the OS requires signed keys to be available. Check your bind mount and retry or use GrapheneOS test keys (not recommended)."
         exit 1
+    # If we want a final ZIP and if we both keys set up and we are using the test keys...
+    elif [[ $PACKAGE_OS == "true" && -d "/opt/build/grapheneos/keys" && $USE_AOSP_TEST_KEYS == "true" ]]; then
+        echo "Packaging the OS requires signed keys. You have bind mounted your own keys and selected to use the AOSP test keys. Please set USE_AOSP_TEST_KEYS to false and try again."
+        exit 1
+    # If we want to build the applications and we don't have what applications to build...
+    elif [[ $USE_PREBUILT_APPS == "false" && -z $APPS_TO_BUILD ]]; then
+        echo "If you want to build the applications, ensure that you set APPS_TO_BUILD to what you want to build. If you want to build all, set the variable to all."
+        exit 1
     fi
 }
 
@@ -94,6 +108,37 @@ get_metadata () {
     export BUILD_DATETIME="$BUILD_DATETIME"
     export BUILD_ID="$BUILD_ID"
     export MANIFEST_FROM_METADATA="${BUILD_ID}.${BUILD_NUMBER}"
+}
+
+repo_init_and_sync () {
+    local DEVICE=$1
+    local BUILD_ID=$2
+    local MANIFEST=$3
+
+    echo "[INFO] Downloading and verifying manifest"
+    if [ "$MANIFEST" = "development" ]; then
+        case $DEVICE in
+            oriole|raven|bluejay|panther|cheetah|lynx)
+                repo init -u https://github.com/GrapheneOS/platform_manifest.git -b 13
+                ;;
+            *)
+                repo init -u https://github.com/GrapheneOS/platform_manifest.git -b 13-coral
+                ;;
+        esac
+    else
+        repo init -u https://github.com/GrapheneOS/platform_manifest.git -b refs/tags/$MANIFEST
+        mkdir -p ~/.ssh && curl https://grapheneos.org/allowed_signers > ~/.ssh/grapheneos_allowed_signers
+        (cd .repo/manifests && git config gpg.ssh.allowedSignersFile ~/.ssh/grapheneos_allowed_signers && git verify-tag "$(git describe)")
+    fi
+
+    # There's a bug where if we set the keys or local_manifest directly into the build directory, repo doesn't have permissions to do its thing.
+    # We will do it outside of the directory and copy them into the build environment.
+    if [[ -d "/local_manifests" ]]; then
+        sudo cp -r /local_manifests /opt/build/grapheneos/.repo/local_manifests
+    fi
+
+    echo "[INFO] Syncing GrapheneOS tree"
+    repo sync -j${NPROC_SYNC} --force-sync --no-clone-bundle --no-tags
 }
 
 compile_os () {
@@ -128,29 +173,7 @@ compile_os () {
 
     sleep 10
 
-    echo "[INFO] Downloading and verifying manifest"
-    if [ "$MANIFEST" = "development" ]; then
-        case $DEVICE in
-            oriole|raven|bluejay|panther|cheetah|lynx)
-                repo init -u https://github.com/GrapheneOS/platform_manifest.git -b 13
-                ;;
-            *)
-                repo init -u https://github.com/GrapheneOS/platform_manifest.git -b 13-coral
-                ;;
-        esac
-    else
-        repo init -u https://github.com/GrapheneOS/platform_manifest.git -b refs/tags/$MANIFEST
-        mkdir -p ~/.ssh && curl https://grapheneos.org/allowed_signers > ~/.ssh/grapheneos_allowed_signers
-        (cd .repo/manifests && git config gpg.ssh.allowedSignersFile ~/.ssh/grapheneos_allowed_signers && git verify-tag "$(git describe)")
-    fi
-
-    echo "[INFO] Syncing GrapheneOS tree"
-    repo sync -j${NPROC_SYNC} --force-sync --no-clone-bundle --no-tags
-
-    if [ "$USE_PREBUILT_KERNEL" = "false" ]; then
-        echo "[INFO] Building Kernel for ${DEVICE}"
-        build_kernel $DEVICE
-    fi
+    repo_init_and_sync $DEVICE $BUILD_ID $MANIFEST
 
     echo "[INFO] Setting up adevtool"
     yarn install --cwd vendor/adevtool/
@@ -164,6 +187,16 @@ compile_os () {
     sudo vendor/adevtool/bin/run generate-all vendor/adevtool/config/$DEVICE.yml -c vendor/state/$DEVICE.json -s vendor/adevtool/dl/unpacked/$DEVICE-${BUILD_ID,,}/
     sudo chown -R builduser:builduser vendor/{google_devices,adevtool}
     vendor/adevtool/bin/run ota-firmware vendor/adevtool/config/$DEVICE.yml -f vendor/adevtool/dl/$DEVICE-ota-${BUILD_ID,,}-*.zip
+
+    if [ "$USE_PREBUILT_KERNEL" = "false" ]; then
+        echo "[INFO] Building Kernel for ${DEVICE} with tag ${MANIFEST}"
+        build_kernel $DEVICE $MANIFEST
+    fi
+
+    if [ "$USE_PREBUILT_APPS" = "false" ]; then
+        echo "[INFO] Building applications for ${DEVICE}"
+        build_applications
+    fi
 
     echo "[INFO] Building OS"
     source script/envsetup.sh
@@ -182,60 +215,62 @@ compile_os () {
 
 build_kernel () {
     DEVICE=$1
+    MANIFEST=$2
 
     case $DEVICE in
         coral|sunfish)
             mkdir -p android/kernel/coral
             cd android/kernel/coral
-            repo init -u https://github.com/GrapheneOS/kernel_manifest-coral.git -b 13
+            repo init -u https://github.com/GrapheneOS/kernel_manifest-coral.git -b refs/tags/"${MANIFEST}"
             repo sync -j${NPROC_SYNC} --force-sync --no-clone-bundle --no-tags
+
             if [[ $DEVICE == "coral" ]]; then
                 KBUILD_BUILD_VERSION=1 KBUILD_BUILD_USER=build-user KBUILD_BUILD_HOST=build-host KBUILD_BUILD_TIMESTAMP="Thu 01 Jan 1970 12:00:00 AM UTC" BUILD_CONFIG=private/msm-google/build.config.floral build/build.sh
-                rsync -av --delete out/android-msm-pixel-4.14/dist/ device/google/coral-kernel/
+                rsync -av --delete --remove-source-files  out/android-msm-pixel-4.14/dist/ device/google/coral-kernel/
             else
                 KBUILD_BUILD_VERSION=1 KBUILD_BUILD_USER=build-user KBUILD_BUILD_HOST=build-host KBUILD_BUILD_TIMESTAMP="Thu 01 Jan 1970 12:00:00 AM UTC" BUILD_CONFIG=private/msm-google/build.config.sunfish build/build.sh
-                rsync -av --delete out/android-msm-pixel-4.14/dist/ device/google/sunfish-kernel/
+                rsync -av --delete --remove-source-files  out/android-msm-pixel-4.14/dist/ device/google/sunfish-kernel/
             fi
             ;;
         bramble|redfin|barbet)
             mkdir -p android/kernel/redbull
             cd android/kernel/redbull
-            repo init -u https://github.com/GrapheneOS/kernel_manifest-redbull.git -b 13
+            repo init -u https://github.com/GrapheneOS/kernel_manifest-redbull.git -b refs/tags/"${MANIFEST}"
             repo sync -j${NPROC_SYNC} --force-sync --no-clone-bundle --no-tags
             BUILD_CONFIG=private/msm-google/build.config.redbull.vintf build/build.sh
-            rsync -av --delete out/android-msm-pixel-4.19/dist/ device/google/redbull-kernel/vintf/
+            rsync -av --delete --remove-source-files  out/android-msm-pixel-4.19/dist/ device/google/redbull-kernel/vintf/
             ;;
         oriole|raven)
             mkdir -p android/kernel/raviole
             cd android/kernel/raviole
-            repo init -u https://github.com/GrapheneOS/kernel_manifest-raviole.git -b 13
+            repo init -u https://github.com/GrapheneOS/kernel_manifest-raviole.git -b refs/tags/"${MANIFEST}"
             repo sync -j${NPROC_SYNC} --force-sync --no-clone-bundle --no-tags
             LTO=full BUILD_AOSP_KERNEL=1 ./build_slider.sh
-            rsync -av --delete out/mixed/dist/ device/google/raviole-kernel/
+            rsync -av --delete --remove-source-files  out/mixed/dist/ device/google/raviole-kernel/
             ;;
         bluejay)
             mkdir -p android/kernel/bluejay
             cd android/kernel/bluejay
-            repo init -u https://github.com/GrapheneOS/kernel_manifest-bluejay.git -b 13
+            repo init -u https://github.com/GrapheneOS/kernel_manifest-bluejay.git -b refs/tags/"${MANIFEST}"
             repo sync -j${NPROC_SYNC} --force-sync --no-clone-bundle --no-tags
             LTO=full BUILD_AOSP_KERNEL=1 ./build_bluejay.sh
-            rsync -av --delete out/mixed/dist/ device/google/bluejay-kernel/
+            rsync -av --delete --remove-source-files  out/mixed/dist/ device/google/bluejay-kernel/
             ;;
         panther|cheetah)
             mkdir -p android/kernel/pantah
             cd android/kernel/pantah
-            repo init -u https://github.com/GrapheneOS/kernel_manifest-pantah.git -b 13
+            repo init -u https://github.com/GrapheneOS/kernel_manifest-pantah.git -b refs/tags/"${MANIFEST}"
             repo sync -j${NPROC_SYNC} --force-sync --no-clone-bundle --no-tags
             LTO=full BUILD_AOSP_KERNEL=1 ./build_cloudripper.sh
-            rsync -av --delete out/mixed/dist/ device/google/pantah-kernel/
+            rsync -av --delete --remove-source-files  out/mixed/dist/ device/google/pantah-kernel/
             ;;
         lynx)
             mkdir -p android/kernel/lynx
             cd android/kernel/lynx
-            repo init -u https://github.com/GrapheneOS/kernel_manifest-lynx.git -b 13
+            repo init -u https://github.com/GrapheneOS/kernel_manifest-lynx.git -b refs/tags/"${MANIFEST}"
             repo sync -j${NPROC_SYNC} --force-sync --no-clone-bundle --no-tags
             LTO=full BUILD_AOSP_KERNEL=1 ./build_lynx.sh
-            rsync -av --delete out/mixed/dist/ device/google/lynx-kernel/
+            rsync -av --delete --remove-source-files  out/mixed/dist/ device/google/lynx-kernel/
             ;;
     esac
 }
@@ -248,24 +283,24 @@ package_os () {
 
     if [[ $USE_AOSP_TEST_KEYS == "true" ]]; then
         mkdir -p keys/$DEVICE
-        ln -s keys/$DEVICE/releasekey.pk8 /build/target/product/security/testkey.pk8
-        ln -s keys/$DEVICE/platform.pk8 /build/target/product/security/platform.pk8
-        ln -s keys/$DEVICE/shared.pk8 /build/target/product/security/shared.pk8
-        ln -s keys/$DEVICE/media.pk8 /build/target/product/security/media.pk8
-        ln -s keys/$DEVICE/bluetooth.pk8 /build/target/product/security/bluetooth.pk8
-        ln -s keys/$DEVICE/sdk_sandbox.pk8 /build/target/product/security/sdk_sandbox.pk8
-        ln -s keys/$DEVICE/networkstack.pk8 /build/target/product/security/networkstack.pk8
+        ln -s keys/$DEVICE/releasekey.pk8 build/target/product/security/testkey.pk8
+        ln -s keys/$DEVICE/platform.pk8 build/target/product/security/platform.pk8
+        ln -s keys/$DEVICE/shared.pk8 build/target/product/security/shared.pk8
+        ln -s keys/$DEVICE/media.pk8 build/target/product/security/media.pk8
+        ln -s keys/$DEVICE/bluetooth.pk8 build/target/product/security/bluetooth.pk8
+        ln -s keys/$DEVICE/sdk_sandbox.pk8 build/target/product/security/sdk_sandbox.pk8
+        ln -s keys/$DEVICE/networkstack.pk8 build/target/product/security/networkstack.pk8
 
-        ln -s keys/$DEVICE/releasekey.x509.pem /build/target/product/security/testkey.x509.pem
-        ln -s keys/$DEVICE/platform.x509.pem /build/target/product/security/platform.x509.pem
-        ln -s keys/$DEVICE/shared.x509.pem /build/target/product/security/shared.x509.pem
-        ln -s keys/$DEVICE/media.x509.pem /build/target/product/security/media.x509.pem
-        ln -s keys/$DEVICE/bluetooth.x509.pem /build/target/product/security/bluetooth.x509.pem
-        ln -s keys/$DEVICE/sdk_sandbox.x509.pem /build/target/product/security/sdk_sandbox.x509.pem
-        ln -s keys/$DEVICE/networkstack.x509.pem /build/target/product/security/networkstack.x509.pem
+        ln -s keys/$DEVICE/releasekey.x509.pem build/target/product/security/testkey.x509.pem
+        ln -s keys/$DEVICE/platform.x509.pem build/target/product/security/platform.x509.pem
+        ln -s keys/$DEVICE/shared.x509.pem build/target/product/security/shared.x509.pem
+        ln -s keys/$DEVICE/media.x509.pem build/target/product/security/media.x509.pem
+        ln -s keys/$DEVICE/bluetooth.x509.pem build/target/product/security/bluetooth.x509.pem
+        ln -s keys/$DEVICE/sdk_sandbox.x509.pem build/target/product/security/sdk_sandbox.x509.pem
+        ln -s keys/$DEVICE/networkstack.x509.pem build/target/product/security/networkstack.x509.pem
 
-        ln -s keys/$DEVICE/avb.pem /external/avb/test/data/testkey_rsa4096_pub.pem
-        ln -s keys/$DEVICE/avb_pkmd.bin /external/avb/test/data/testkey_rsa4096_pub.bin
+        ln -s keys/$DEVICE/avb.pem external/avb/test/data/testkey_rsa4096_pub.pem
+        ln -s keys/$DEVICE/avb_pkmd.bin external/avb/test/data/testkey_rsa4096_pub.bin
 
         signify -G -n -p keys/$DEVICE/factory.pub -s keys/$DEVICE/factory.sec
     fi
@@ -349,6 +384,11 @@ build_applications () {
         cd ..
     done
 }
+
+# export_builds () {
+
+#     m installclean
+# }
 
 check_breaking_env
 
