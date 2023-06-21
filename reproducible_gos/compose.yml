@@ -1,0 +1,18 @@
+services:
+  reproducible-gos-builder:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: reproducible-gos-builder
+    privileged: true
+    # These are the bare minimum to have a reproducible build
+    environment:
+      - DEVICES_TO_BUILD="coral"
+      - BUILD_TARGET=stable
+      # - BUILD_ID=TQ3A.230605.012
+      # - BUILD_NUMBER=2023061402
+      # - BUILD_DATETIME=1686786286
+      - NPROC_SYNC=8
+      - NPROC_BUILD=8
+    volumes:
+      - ./grapheneos-repro:/opt/build/grapheneos
