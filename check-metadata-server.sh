@@ -18,7 +18,7 @@ if [ -z "$CURRENT_METADATA_NUMBER" ] || [ "$BUILD_DATETIME" != "$CURRENT_METADAT
 elif [ "$BUILD_DATETIME" = "$CURRENT_METADATA_DATETIME" ]; then
     echo "Same version, skipping..."
 else
-    echo "Something has gone seriously wrong. Hopefully the next one will correct it."
+    echo "Something has gone seriously wrong. Hopefully the next run will correct it."
 fi
 
 echo "$BUILD_NUMBER" "$BUILD_DATETIME" "$BUILD_ID" "$BRANCH" > "$CURRENT_METADATA_FILE"

@@ -1,7 +1,9 @@
 FROM archlinux:latest
 
+COPY . /usr/local/bin/
+
 # Obtain all needed packages from Arch Linux repos
-RUN pacman -Syyuu --noconfirm repo python git gnupg diffutils freetype2 \ 
+RUN pacman -Syyuu --noconfirm repo python git gnupg diffutils freetype2 jdk17-openjdk \ 
     fontconfig ttf-dejavu openssl rsync unzip zip python-protobuf nodejs-lts-hydrogen \
     yarn gperf lib32-glibc lib32-gcc-libs signify openssh base-devel make cpio parallel && \
     # Create a non-root user and download a package from the AUR
@@ -14,10 +16,14 @@ RUN pacman -Syyuu --noconfirm repo python git gnupg diffutils freetype2 \
     # Give our user sudo privileges
     usermod -a -G wheel builduser && \
     echo "%wheel ALL=(ALL:ALL) NOPASSWD: ALL" > /etc/sudoers.d/nopass && \
-    mkdir -p /opt/build/grapheneos/ && chown -R builduser:builduser /opt/build/
+    # Create our building directory
+    mkdir -p /opt/build/ && chown -R builduser:builduser /opt/build/ && \
+    chmod a+x /usr/local/bin/entrypoint.bash /usr/local/bin/install_sdk.sh /usr/local/bin/package_os.sh \
+    /usr/local/bin/compile_os.sh /usr/local/bin/build_vanadium.sh /usr/local/bin/build_kernel.sh \
+    /usr/local/bin/build_applications.sh
 
-COPY entrypoint.bash /usr/local/bin/build-entrypoint.bash
+ENV OFFICIAL_BUILD=true
 USER builduser
 
-WORKDIR /opt/build/grapheneos
-ENTRYPOINT ["/usr/local/bin/build-entrypoint.bash"]
+WORKDIR /opt/build/
+ENTRYPOINT ["/usr/local/bin/entrypoint.bash"]

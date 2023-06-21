@@ -1,0 +1,14 @@
+services:
+  kernel-builder:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kernel-builder
+    # These are the bare minimum to build the kernel
+    environment:
+      - DEVICES_TO_BUILD="coral"
+      - MANIFESTS_FOR_BUILD="TQ3A.230605.012.2023061402"
+      - NPROC_SYNC=8
+    volumes:
+      - ./grapheneos-kernel/:/opt/build/kernel
+      - ./grapheneos-compiled-kernel:/opt/build/compiled_kernel
