@@ -73,6 +73,7 @@ source script/envsetup.sh
 m aapt2
 
 echo "[INFO] Obtaining proprietary files with adevtool"
+make -f build/make/core/build_id.mk
 vendor/adevtool/bin/run download vendor/adevtool/dl/ -d $DEVICE -b $BUILD_ID -t factory ota
 sudo rm -rf  vendor/adevtool/dl/unpacked/$DEVICE-${BUILD_ID,,}/
 sudo vendor/adevtool/scripts/unpack-images.sh vendor/adevtool/dl/$DEVICE-${BUILD_ID,,}-*.zip

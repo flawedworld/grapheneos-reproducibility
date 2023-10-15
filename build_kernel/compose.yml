@@ -1,14 +1,44 @@
 services:
-  kernel-builder:
+  gos-kernel-builder:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: kernel-builder
+    container_name: gos-kernel-builder
     # These are the bare minimum to build the kernel
     environment:
-      - DEVICES_TO_BUILD="coral"
-      - MANIFESTS_FOR_BUILD="TQ3A.230605.012.2023061402"
+      # Kernels supported
+      - BUILD_CORAL=yes
+      - BUILD_SUNFISH=yes
+      - BUILD_BRAMBLE=yes
+      - BUILD_REDFIN=yes
+      - BUILD_BARBET=yes
+      - BUILD_ORIOLE=yes
+      - BUILD_RAVEN=yes
+      - BUILD_BLUEJAY=yes
+      - BUILD_PANTHER=yes
+      - BUILD_CHEETAH=yes
+      - BUILD_LYNX=yes
+      - BUILD_TANGORPRO=yes
+      - BUILD_FELIX=yes
+      # Manifests for the kernels
+      - CORAL_MANIFEST=latest
+      - SUNFISH_MANIFEST=latest
+      - BRAMBLE_MANIFEST=latest
+      - REDFIN_MANIFEST=latest
+      - BARBET_MANIFEST=latest
+      - ORIOLE_MANIFEST=latest
+      - RAVEN_MANIFEST=latest
+      - BLUEJAY_MANIFEST=latest
+      - PANTHER_MANIFEST=latest
+      - CHEETAH_MANIFEST=latest
+      - LYNX_MANIFEST=latest
+      - TANGORPRO_MANIFEST=latest
+      - FELIX_MANIFEST=latest
+      # Sync options
       - NPROC_SYNC=8
+      # Git options (optional)
+      - GIT_USERNAME="grapheneos"
+      - GIT_EMAILADDRESS="grapheneos-build@localhost"
     volumes:
       - ./grapheneos-kernel/:/opt/build/kernel
       - ./grapheneos-compiled-kernel:/opt/build/compiled_kernel

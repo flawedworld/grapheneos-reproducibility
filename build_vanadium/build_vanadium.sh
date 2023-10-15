@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-VERSION_CODE=$1
+readonly VERSION_CODE=$1
 
 # Set build trees
 mkdir -p /opt/build/vanadium /opt/build/depot_tools /opt/build/chromium

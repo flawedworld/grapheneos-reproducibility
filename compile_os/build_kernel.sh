@@ -25,7 +25,7 @@ case $DEVICE in
         repo sync -j${NPROC_SYNC} --force-sync --no-clone-bundle --no-tags
         BUILD_CONFIG=private/msm-google/build.config.redbull.vintf build/build.sh
         rsync -av --delete out/android-msm-pixel-4.19/dist/ /opt/build/grapheneos/device/google/redbull-kernel/vintf/
-        ;;
+    ;;
     oriole|raven)
         mkdir -p /opt/build/kernel/"${DEVICE}"
         cd /opt/build/kernel/"${DEVICE}"
@@ -33,7 +33,7 @@ case $DEVICE in
         repo sync -j${NPROC_SYNC} --force-sync --no-clone-bundle --no-tags
         LTO=full BUILD_AOSP_KERNEL=1 ./build_slider.sh
         rsync -av --delete out/mixed/dist/ /opt/build/grapheneos/device/google/raviole-kernel/
-        ;;
+    ;;
     bluejay)
         mkdir -p /opt/build/kernel/"${DEVICE}"
         cd /opt/build/kernel/"${DEVICE}"
@@ -41,7 +41,7 @@ case $DEVICE in
         repo sync -j${NPROC_SYNC} --force-sync --no-clone-bundle --no-tags
         LTO=full BUILD_AOSP_KERNEL=1 ./build_bluejay.sh
         rsync -av --delete out/mixed/dist/ /opt/build/grapheneos/device/google/bluejay-kernel/
-        ;;
+    ;;
     panther|cheetah)
         mkdir -p /opt/build/kernel/"${DEVICE}"
         cd /opt/build/kernel/"${DEVICE}"
@@ -49,7 +49,7 @@ case $DEVICE in
         repo sync -j${NPROC_SYNC} --force-sync --no-clone-bundle --no-tags
         LTO=full BUILD_AOSP_KERNEL=1 ./build_cloudripper.sh
         rsync -av --delete out/mixed/dist/ /opt/build/grapheneos/device/google/pantah-kernel/
-        ;;
+    ;;
     lynx)
         mkdir -p /opt/build/kernel/"${DEVICE}"
         cd /opt/build/kernel/"${DEVICE}"
@@ -57,7 +57,7 @@ case $DEVICE in
         repo sync -j${NPROC_SYNC} --force-sync --no-clone-bundle --no-tags
         LTO=full BUILD_AOSP_KERNEL=1 ./build_lynx.sh
         rsync -av --delete out/mixed/dist/ /opt/build/grapheneos/device/google/lynx-kernel/
-        ;;
+    ;;
     tangorpro)
         mkdir -p /opt/build/kernel/"${DEVICE}"
         cd /opt/build/kernel/"${DEVICE}"
@@ -65,5 +65,5 @@ case $DEVICE in
         repo sync -j${NPROC_SYNC} --force-sync --no-clone-bundle --no-tags
         LTO=full BUILD_AOSP_KERNEL=1 ./build_tangorpro.sh
         rsync -av --delete out/mixed/dist/ /opt/build/grapheneos/device/google/tangorpro-kernel/
-        ;;
+    ;;
 esac

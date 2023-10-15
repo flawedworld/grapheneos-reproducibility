@@ -1,13 +1,27 @@
 services:
-  application-builder:
+  gos-app-build-kitchen:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: application-builder
-    # These are the bare minimum to build the applications
+    container_name: gos-app-build-kitchen
     environment:
-      - APPS_TO_BUILD=all
-      - MANIFEST=latest
+      # Standalone Apps
+      - BUILD_AUDITOR=yes
+      - BUILD_APPS=yes
+      - BUILD_CAMERA=yes
+      - BUILD_PDFVIEWER=yes
+      - BUILD_TALKBACK=yes
+      - BUILD_GMSCOMPAT=yes
+      # Manifests for apps
+      - AUDITOR_MANIFEST=latest
+      - APPS_MANIFEST=latest
+      - CAMERA_MANIFEST=latest
+      - PDFVIEWER_MANIFEST=latest
+      - TALKBACK_MANIFEST=latest
+      - GMSCOMPAT_MANIFEST=latest
+      # Git configuration (optional)
+      - GIT_USERNAME=grapheneos
+      - GIT_EMAILADDRESS=grapheneos-build@localhost
     volumes:
       - ./grapheneos-apps/:/opt/build/apps
       - ./grapheneos-compiled-apps/:/opt/build/compiled_apps

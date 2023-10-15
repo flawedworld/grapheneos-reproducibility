@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+
+# Set default values 
+BUILD_CORAL="${BUILD_CORAL:-no}"
+BUILD_SUNFISH="${BUILD_SUNFISH:-no}"
+BUILD_BRAMBLE="${BUILD_BRAMBLE:-no}"
+BUILD_REDFIN="${BUILD_REDFIN:-no}"
+BUILD_BARBET="${BUILD_BARBET:-no}"
+BUILD_ORIOLE="${BUILD_ORIOLE:-no}"
+BUILD_RAVEN="${BUILD_RAVEN:-no}"
+BUILD_BLUEJAY="${BUILD_BLUEJAY:-no}"
+BUILD_PANTHER="${BUILD_PANTHER:-no}"
+BUILD_CHEETAH="${BUILD_CHEETAH:-no}"
+BUILD_LYNX="${BUILD_LYNX:-no}"
+BUILD_TANGORPRO="${BUILD_TANGORPRO:-no}"
+BUILD_FELIX="${BUILD_FELIX:-no}"
+
+CORAL_MANIFEST="${CORAL_MANIFEST:-latest}"
+SUNFISH_MANIFEST="${SUNFISH_MANIFEST:-latest}"
+BRAMBLE_MANIFEST="${BRAMBLE_MANIFEST:-latest}"
+REDFIN_MANIFEST="${REDFIN_MANIFEST:-latest}"
+BARBET_MANIFEST="${BARBET_MANIFEST:-latest}"
+ORIOLE_MANIFEST="${ORIOLE_MANIFEST:-latest}"
+RAVEN_MANIFEST="${RAVEN_MANIFEST:-latest}"
+BLUEJAY_MANIFEST="${BLUEJAY_MANIFEST:-latest}"
+PANTHER_MANIFEST="${PANTHER_MANIFEST:-latest}"
+CHEETAH_MANIFEST="${CHEETAH_MANIFEST:-latest}"
+LYNX_MANIFEST="${LYNX_MANIFEST:-latest}"
+TANGORPRO_MANIFEST="${TANGORPRO_MANIFEST:-latest}"
+FELIX_MANIFEST="${FELIX_MANIFEST:-latest}"
+
+NPROC_SYNC="${NPROC_SYNC:-8}"
+
+GIT_USERNAME="${GIT_USERNAME:-grapheneos}"
+GIT_EMAILADDRESS="${GIT_EMAILADDRESS:-grapheneos-build@localhost}"
+
+# Configure Git user name and email and gitcookies
+git config --global user.name "${GIT_USERNAME}"
+git config --global user.email "${GIT_EMAILADDRESS}"
+
+if [ -f "/.gitcookies" ]; then
+    git config --global http.cookiefile /.gitcookies
+fi
+
+source build_kernel.sh
