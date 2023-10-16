@@ -1,0 +1,126 @@
+#!/bin/bash
+
+set -o errexit -o pipefail
+
+# Set default values
+BUILD_CORAL="${BUILD_CORAL:-no}"
+CORAL_BUILD_NUMBER="${CORAL_BUILD_NUMBER:-""}"
+CORAL_BUILD_DATETIME="${CORAL_BUILD_DATETIME:-""}"
+
+BUILD_SUNFISH="${BUILD_SUNFISH:-no}"
+SUNFISH_BUILD_NUMBER="${SUNFISH_BUILD_NUMBER:-""}"
+SUNFISH_BUILD_DATETIME="${SUNFISH_BUILD_DATETIME:-""}"
+
+BUILD_BRAMBLE="${BUILD_BRAMBLE:-no}"
+BRAMBLE_BUILD_NUMBER="${BRAMBLE_BUILD_NUMBER:-""}"
+BRAMBLE_BUILD_DATETIME="${BRAMBLE_BUILD_DATETIME:-""}"
+
+BUILD_REDFIN="${BUILD_REDFIN:-no}"
+REDFIN_BUILD_NUMBER="${REDFIN_BUILD_NUMBER:-""}"
+REDFIN_BUILD_DATETIME="${REDFIN_BUILD_DATETIME:-""}"
+
+BUILD_BARBET="${BUILD_BARBET:-no}"
+BARBET_BUILD_NUMBER="${BARBET_BUILD_NUMBER:-""}"
+BARBET_BUILD_DATETIME="${BARBET_BUILD_DATETIME:-""}"
+
+BUILD_ORIOLE="${BUILD_ORIOLE:-no}"
+ORIOLE_BUILD_NUMBER="${ORIOLE_BUILD_NUMBER:-""}"
+ORIOLE_BUILD_DATETIME="${ORIOLE_BUILD_DATETIME:-""}"
+
+BUILD_RAVEN="${BUILD_RAVEN:-no}"
+RAVEN_BUILD_NUMBER="${RAVEN_BUILD_NUMBER:-""}"
+RAVEN_BUILD_DATETIME="${RAVEN_BUILD_DATETIME:-""}"
+
+BUILD_BLUEJAY="${BUILD_BLUEJAY:-no}"
+BLUEJAY_BUILD_NUMBER="${BLUEJAY_BUILD_NUMBER:-""}"
+BLUEJAY_BUILD_DATETIME="${BLUEJAY_BUILD_DATETIME:-""}"
+
+BUILD_PANTHER="${BUILD_PANTHER:-no}"
+PANTHER_BUILD_NUMBER="${PANTHER_BUILD_NUMBER:-""}"
+PANTHER_BUILD_DATETIME="${PANTHER_BUILD_DATETIME:-""}"
+
+BUILD_CHEETAH="${BUILD_CHEETAH:-no}"
+CHEETAH_BUILD_NUMBER="${CHEETAH_BUILD_NUMBER:-""}"
+CHEETAH_BUILD_DATETIME="${CHEETAH_BUILD_DATETIME:-""}"
+
+BUILD_LYNX="${BUILD_LYNX:-no}"
+LYNX_BUILD_NUMBER="${LYNX_BUILD_NUMBER:-""}"
+LYNX_BUILD_DATETIME="${LYNX_BUILD_DATETIME:-""}"
+
+BUILD_TANGORPRO="${BUILD_TANGORPRO:-no}"
+TANGORPRO_BUILD_NUMBER="${TANGORPRO_BUILD_NUMBER:-""}"
+TANGORPRO_BUILD_DATETIME="${TANGORPRO_BUILD_DATETIME:-""}"
+
+BUILD_FELIX="${BUILD_FELIX:-no}"
+FELIX_BUILD_NUMBER="${FELIX_BUILD_NUMBER:-""}"
+FELIX_BUILD_DATETIME="${FELIX_BUILD_DATETIME:-""}"
+
+USE_PREBUILT_APPS="${USE_PREBUILT_APPS:-"true"}"
+USE_PREBUILT_KERNEL="${USE_PREBUILT_KERNEL:-"true"}"
+USE_PREBUILT_VANADIUM="${USE_PREBUILT_VANADIUM:-"true"}"
+
+NPROC_SYNC="${NPROC_SYNC:-8}"
+NPROC_BUILD="${NPROC_BUILD:-8}"
+
+GIT_USERNAME="${GIT_USERNAME:-grapheneos}"
+GIT_EMAILADDRESS="${GIT_EMAILADDRESS:-grapheneos-build@localhost}"
+
+# Configure Git user name and email and gitcookies
+git config --global user.name "$GIT_USERNAME"
+git config --global user.email "$GIT_EMAILADDRESS"
+
+if [ -f "/.gitcookies" ]; then
+    git config --global http.cookiefile /.gitcookies
+fi
+
+if [[ $BUILD_CORAL == "yes" ]]; then
+    source compile_os.sh "coral" "${CORAL_BUILD_NUMBER}" "${CORAL_BUILD_DATETIME}"
+fi
+
+if [[ $BUILD_SUNFISH == "yes" ]]; then
+    source compile_os.sh "sunfish" "${SUNFISH_BUILD_NUMBER}" "${SUNFISH_BUILD_DATETIME}"
+fi
+
+if [[ $BUILD_BRAMBLE == "yes" ]]; then
+    source compile_os.sh "bramble" "${BRAMBLE_BUILD_NUMBER}" "${BRAMBLE_BUILD_DATETIME}"
+fi
+
+if [[ $BUILD_REDFIN == "yes" ]]; then
+    source compile_os.sh "redfin" "${REDFIN_BUILD_NUMBER}" "${REDFIN_BUILD_DATETIME}"
+fi
+
+if [[ $BUILD_BARBET == "yes" ]]; then
+    source compile_os.sh "barbet" "${BARBET_BUILD_NUMBER}" "${BARBET_BUILD_DATETIME}"
+fi
+
+if [[ $BUILD_ORIOLE == "yes" ]]; then
+    source compile_os.sh "oriole" "${ORIOLE_BUILD_NUMBER}" "${ORIOLE_BUILD_DATETIME}"
+fi
+
+if [[ $BUILD_RAVEN == "yes" ]]; then
+    source compile_os.sh "raven" "${RAVEN_BUILD_NUMBER}" "${RAVEN_BUILD_DATETIME}"
+fi
+
+if [[ $BUILD_BLUEJAY == "yes" ]]; then
+    source compile_os.sh "bluejay" "${BLUEJAY_BUILD_NUMBER}" "${BLUEJAY_BUILD_DATETIME}"
+fi
+
+if [[ $BUILD_PANTHER == "yes" ]]; then
+    source compile_os.sh "panther" "${PANTHER_BUILD_NUMBER}" "${PANTHER_BUILD_DATETIME}"
+fi
+
+if [[ $BUILD_CHEETAH == "yes" ]]; then
+    source compile_os.sh "cheetah" "${CHEETAH_BUILD_NUMBER}" "${CHEETAH_BUILD_DATETIME}"
+fi
+
+if [[ $BUILD_LYNX == "yes" ]]; then
+    source compile_os.sh "lynx" "${LYNX_BUILD_NUMBER}" "${LYNX_BUILD_DATETIME}"
+fi
+
+if [[ $BUILD_TANGORPRO == "yes" ]]; then
+    source compile_os.sh "tangorpro" "${TANGORPRO_BUILD_NUMBER}" "${TANGORPRO_BUILD_DATETIME}"
+fi
+
+if [[ $BUILD_FELIX == "yes" ]]; then
+    source compile_os.sh "felix" "${FELIX_BUILD_NUMBER}" "${FELIX_BUILD_DATETIME}"
+fi
