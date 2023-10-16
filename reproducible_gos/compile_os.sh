@@ -1,7 +1,5 @@
 #!/bin/bash
 
-export OFFICIAL_BUILD=true
-
 DEVICE=$1
 BUILD_NUMBER=$2
 BUILD_DATETIME=$3

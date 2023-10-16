@@ -18,7 +18,7 @@ RUN pacman -Syyuu --noconfirm repo python git gnupg diffutils freetype2 jdk17-op
     echo "%wheel ALL=(ALL:ALL) NOPASSWD: ALL" > /etc/sudoers.d/nopass && \
     # Create our building directory
     mkdir -p /opt/build/ && chown -R builduser:builduser /opt/build/ && \
-    chmod a+x /usr/local/bin/entrypoint.bash /usr/local/bin/install_sdk.sh /usr/local/bin/package_os.sh \
+    chmod a+x /usr/local/bin/entrypoint.sh /usr/local/bin/install_sdk.sh /usr/local/bin/package_os.sh \
     /usr/local/bin/compile_os.sh /usr/local/bin/build_vanadium.sh /usr/local/bin/build_kernel.sh \
     /usr/local/bin/build_applications.sh
 
@@ -26,4 +26,4 @@ ENV OFFICIAL_BUILD=true
 USER builduser
 
 WORKDIR /opt/build/
-ENTRYPOINT ["/usr/local/bin/entrypoint.bash"]
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
